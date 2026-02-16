@@ -4,14 +4,32 @@ import { useSession } from "next-auth/react";
 import { listSolicitudesProfesional, updateSolicitudEstado } from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 export default function ProfesionalDashboard() {
   const { data } = useSession();
   const solicitudes = listSolicitudesProfesional(data?.user?.id || "");
+
   return (
-    <div>
-      <div className="mb-4 flex items-center justify-between"><h1 className="text-3xl font-bold">Solicitudes recibidas</h1><Link href="/dashboard/profesional/perfil" className="text-primary underline">Editar perfil</Link></div>
-      <div className="space-y-3">{solicitudes.map((s)=><Card key={s.id}><p className="font-medium">{s.clientName}</p><p>{s.message}</p><div className="mt-2 flex gap-2"><Button variant="secondary" onClick={()=>updateSolicitudEstado(s.id,"aceptado")}>Aceptar</Button><Button variant="outline" onClick={()=>updateSolicitudEstado(s.id,"rechazado")}>Rechazar</Button></div></Card>)}{solicitudes.length===0&&<Card>No hay solicitudes.</Card>}</div>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-slate-100">Solicitudes recibidas</h1>
+        <Link href="/dashboard/profesional/perfil" className="text-sm text-cyan-200 underline">Editar perfil</Link>
+      </div>
+      {solicitudes.length === 0 && <Card>No hay solicitudes nuevas.</Card>}
+      {solicitudes.map((s) => (
+        <Card key={s.id} className="space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <p className="font-semibold text-slate-100">{s.clientName}</p>
+            <Badge>{s.estado}</Badge>
+          </div>
+          <p className="text-slate-300">{s.message}</p>
+          <div className="flex gap-2">
+            <Button size="sm" variant="secondary" onClick={() => updateSolicitudEstado(s.id, "aceptado")}>Aceptar</Button>
+            <Button size="sm" variant="outline" onClick={() => updateSolicitudEstado(s.id, "rechazado")}>Rechazar</Button>
+          </div>
+        </Card>
+      ))}
     </div>
   );
 }

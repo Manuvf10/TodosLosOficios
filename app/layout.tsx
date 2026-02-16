@@ -1,21 +1,26 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { Navbar } from "@/components/common/navbar";
 import { Footer } from "@/components/common/footer";
+import { AmbientBackground } from "@/components/common/ambient-background";
+
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "TodosLosOficios",
-  description: "Marketplace de profesionales locales",
+  description: "Marketplace moderno de profesionales locales",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es">
-      <body>
+      <body className={`${inter.className} noise`}>
+        <AmbientBackground />
         <Providers>
           <Navbar />
-          <main className="mx-auto max-w-6xl p-4">{children}</main>
+          <main className="app-shell py-6">{children}</main>
           <Footer />
         </Providers>
       </body>

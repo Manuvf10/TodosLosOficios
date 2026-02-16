@@ -12,5 +12,5 @@ export default function DashboardIndex() {
     router.replace(data.user.role === "PROFESIONAL" ? "/dashboard/profesional" : "/dashboard/cliente");
   }, [data, router]);
 
-  return <p>Redirigiendo...</p>;
+  return <div className="glass rounded-2xl p-6 text-slate-300">Redirigiendo a tu panel...</div>;
 }

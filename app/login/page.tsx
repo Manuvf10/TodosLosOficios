@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { storage } from "@/lib/storage";
+import { Badge } from "@/components/ui/badge";
 
 const schema = z.object({ email: z.string().email(), password: z.string().min(6) });
 
@@ -34,30 +35,35 @@ export default function LoginPage() {
   const googleEnabled = !!process.env.NEXT_PUBLIC_GOOGLE_ENABLED;
 
   return (
-    <div className="mx-auto max-w-md rounded-xl bg-white p-6 shadow">
-      <h1 className="mb-4 text-2xl font-bold">Iniciar sesión</h1>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-        <div>
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" {...register("email")} />
-          {errors.email && <p className="text-sm text-red-600">Email inválido</p>}
-        </div>
-        <div>
-          <Label htmlFor="password">Contraseña</Label>
-          <Input id="password" type="password" {...register("password")} />
-        </div>
-        <Button disabled={isSubmitting} className="w-full">
-          Entrar
+    <div className="mx-auto max-w-md">
+      <div className="glass rounded-3xl p-6 md:p-8">
+        <Badge className="mb-3">Acceso seguro</Badge>
+        <h1 className="text-3xl font-bold text-slate-100">Bienvenido de nuevo</h1>
+        <p className="mt-2 text-sm text-slate-300">Accede a tus solicitudes y gestiona tus presupuestos.</p>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
+          <div>
+            <Label htmlFor="email">Email</Label>
+            <Input id="email" {...register("email")} />
+            {errors.email && <p className="mt-1 text-sm text-red-300">Introduce un email válido.</p>}
+          </div>
+          <div>
+            <Label htmlFor="password">Contraseña</Label>
+            <Input id="password" type="password" {...register("password")} />
+            {errors.password && <p className="mt-1 text-sm text-red-300">Mínimo 6 caracteres.</p>}
+          </div>
+          <Button disabled={isSubmitting} className="w-full" size="lg">Entrar</Button>
+        </form>
+
+        <Button
+          variant="outline"
+          className="mt-3 w-full"
+          disabled={!googleEnabled}
+          title={!googleEnabled ? "Google OAuth no configurado (placeholder)" : "Continuar con Google"}
+        >
+          Google (placeholder)
         </Button>
-      </form>
-      <Button
-        variant="outline"
-        className="mt-3 w-full"
-        disabled={!googleEnabled}
-        title={!googleEnabled ? "Configura GOOGLE_CLIENT_ID/SECRET" : "Continuar con Google"}
-      >
-        Google (placeholder)
-      </Button>
+      </div>
     </div>
   );
 }

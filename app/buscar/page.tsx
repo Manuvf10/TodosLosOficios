@@ -1,12 +1,17 @@
 "use client";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { fetchCategorias, fetchProfesionales } from "@/lib/api";
 import { ProCard } from "@/components/common/pro-card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { distanciaKm } from "@/lib/geo";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/common/empty-state";
+
+const POPULAR = ["Madrid", "Barcelona", "Valencia", "Sevilla"];
 
 export default function BuscarPage() {
   const [ciudad, setCiudad] = useState("Madrid");
@@ -15,21 +20,83 @@ export default function BuscarPage() {
   const [orden, setOrden] = useState("valorados");
 
   const { data: cats = [] } = useQuery({ queryKey: ["cats"], queryFn: fetchCategorias });
-  const { data = [], isLoading, error } = useQuery({ queryKey: ["pros", ciudad, categoria, radioKm, orden], queryFn: () => fetchProfesionales({ ciudad, categoria, radioKm, orden }) });
+  const { data = [], isLoading, error } = useQuery({
+    queryKey: ["pros", ciudad, categoria, radioKm, orden],
+    queryFn: () => fetchProfesionales({ ciudad, categoria, radioKm, orden }),
+  });
+
+  const activeFilters = useMemo(
+    () => [ciudad && `📍 ${ciudad}`, categoria && `🧰 ${categoria}`, `📏 ${radioKm} km`, `↕ ${orden}`].filter(Boolean),
+    [ciudad, categoria, radioKm, orden],
+  );
+
+  const clearFilters = () => {
+    setCategoria("");
+    setRadioKm("10");
+    setOrden("valorados");
+  };
 
   return (
-    <div>
-      <h1 className="mb-4 text-3xl font-bold">Buscar profesionales</h1>
-      <div className="mb-5 grid gap-3 rounded-xl bg-white p-4 md:grid-cols-4">
-        <Input value={ciudad} onChange={(e) => setCiudad(e.target.value)} placeholder="Ciudad o CP" />
-        <Select onValueChange={setCategoria}><SelectTrigger><SelectValue placeholder="Categoría" /></SelectTrigger><SelectContent>{cats.map((c)=><SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select>
-        <Select defaultValue="10" onValueChange={setRadioKm}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["5","10","25"].map((v)=><SelectItem key={v} value={v}>{v} km</SelectItem>)}</SelectContent></Select>
-        <Select defaultValue="valorados" onValueChange={setOrden}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="valorados">Mejor valorados</SelectItem><SelectItem value="cercanos">Más cercanos</SelectItem><SelectItem value="economicos">Más económicos</SelectItem></SelectContent></Select>
+    <div className="space-y-5">
+      <header className="glass rounded-2xl p-5">
+        <h1 className="text-3xl font-bold text-slate-100">Buscar profesionales</h1>
+        <p className="mt-2 text-slate-300">Filtra por ubicación, categoría y presupuesto para encontrar al mejor perfil.</p>
+      </header>
+
+      <div className="grid gap-5 lg:grid-cols-[300px_1fr]">
+        <aside className="glass top-20 h-fit rounded-2xl p-4 lg:sticky">
+          <h2 className="mb-3 text-lg font-semibold">Filtros</h2>
+          <div className="space-y-3">
+            <Input value={ciudad} onChange={(e) => setCiudad(e.target.value)} placeholder="Ciudad o CP" />
+            {!ciudad && (
+              <div className="flex flex-wrap gap-2">
+                {POPULAR.map((c) => (
+                  <button key={c} onClick={() => setCiudad(c)} className="rounded-full border border-white/20 px-2.5 py-1 text-xs text-slate-200 hover:bg-white/10">{c}</button>
+                ))}
+              </div>
+            )}
+            <Select value={categoria} onValueChange={setCategoria}>
+              <SelectTrigger><SelectValue placeholder="Categoría" /></SelectTrigger>
+              <SelectContent>
+                {cats.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={radioKm} onValueChange={setRadioKm}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{["5", "10", "25"].map((v) => <SelectItem key={v} value={v}>{v} km</SelectItem>)}</SelectContent>
+            </Select>
+            <Select value={orden} onValueChange={setOrden}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="valorados">Mejor valorados</SelectItem>
+                <SelectItem value="cercanos">Más cercanos</SelectItem>
+                <SelectItem value="economicos">Más económicos</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" className="w-full" onClick={clearFilters}>Limpiar filtros</Button>
+          </div>
+        </aside>
+
+        <section className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm text-slate-300"><strong className="text-slate-100">{data.length}</strong> resultados</p>
+            <div className="flex flex-wrap gap-2">{activeFilters.map((f) => <Badge key={f}>{f}</Badge>)}</div>
+          </div>
+
+          {error && <p className="text-red-300">Error al cargar resultados</p>}
+          {isLoading && <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-80" />)}</div>}
+          {!isLoading && data.length === 0 && (
+            <EmptyState title="No encontramos profesionales" description="Prueba ampliar el radio, cambiar ciudad o ajustar categoría." />
+          )}
+          {!isLoading && data.length > 0 && (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {data.map((pro) => (
+                <ProCard key={pro.id} pro={pro} distance={distanciaKm(ciudad, pro.city)} />
+              ))}
+            </div>
+          )}
+        </section>
       </div>
-      {error && <p className="text-red-600">Error al cargar resultados</p>}
-      {isLoading ? <div className="grid gap-4 md:grid-cols-3">{Array.from({length:6}).map((_,i)=><Skeleton key={i} className="h-64" />)}</div> : (
-        <div className="grid gap-4 md:grid-cols-3">{data.map((pro)=><ProCard key={pro.id} pro={pro} distance={distanciaKm(ciudad, pro.city)} />)}</div>
-      )}
     </div>
   );
 }
