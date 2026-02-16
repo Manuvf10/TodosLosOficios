@@ -22,7 +22,7 @@ export async function fetchProfesionalById(id: string): Promise<Professional> {
 }
 
 export async function fetchReviews(profesionalId: string): Promise<Review[]> {
-  const res = await fetch(`/api/mock/reseñas?profesionalId=${profesionalId}`);
+  const res = await fetch(`/api/mock/resenas?profesionalId=${profesionalId}`);
   if (!res.ok) throw new Error("Error cargando reseñas");
   return res.json();
 }

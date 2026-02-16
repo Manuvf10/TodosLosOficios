@@ -3,11 +3,21 @@ import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
 export async function middleware(req: NextRequest) {
-  if (req.nextUrl.pathname.startsWith("/dashboard")) {
-    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-    if (!token) return NextResponse.redirect(new URL("/login", req.url));
+  const { pathname } = req.nextUrl;
+
+  if (!pathname.startsWith("/dashboard")) return NextResponse.next();
+
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+  if (!token) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/login";
+    url.searchParams.set("callbackUrl", pathname);
+    return NextResponse.redirect(url);
   }
+
   return NextResponse.next();
 }
 
-export const config = { matcher: ["/dashboard/:path*"] };
+export const config = {
+  matcher: ["/dashboard/:path*"],
+};

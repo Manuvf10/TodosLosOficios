@@ -26,7 +26,8 @@ export default function RegistroPage() {
     if (role === "PROFESIONAL") {
       storage.setProfessionalProfile({ id, name: v.name, email: v.email, password: v.password, role, city: v.city, postalCode: v.postalCode, category: v.category || "General", categories: [v.category || "General"], baseRate: v.baseRate || 30, description: v.description || "", verified: false, urgent: false, rating: 5, reviewsCount: 0, photo: "https://placehold.co/400x300", availability: ["Lun"], services: ["Servicio general"] });
     }
-    await signIn("credentials", { email: v.email, password: v.password, localUsers: JSON.stringify(storage.listUsers()), redirect: false });
+    const local = storage.listUsers().find((u) => u.email.toLowerCase() === v.email.toLowerCase()) ?? null;
+    await signIn("credentials", { email: v.email, password: v.password, localUserJson: local ? JSON.stringify(local) : "", redirect: false });
     router.push("/dashboard");
   };
 
