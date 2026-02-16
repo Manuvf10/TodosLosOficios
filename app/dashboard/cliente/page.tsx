@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
+import { useQuery } from "@tanstack/react-query";
 import { listSolicitudesCliente } from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,8 +13,7 @@ const estadoHelp = {
 };
 
 export default function ClienteDashboard() {
-  const { data } = useSession();
-  const solicitudes = listSolicitudesCliente(data?.user?.id || "");
+  const { data: solicitudes = [], isLoading } = useQuery({ queryKey: ["leads", "cliente"], queryFn: listSolicitudesCliente });
 
   return (
     <div className="space-y-4">
@@ -30,7 +29,9 @@ export default function ClienteDashboard() {
         </div>
       </Card>
 
-      {solicitudes.length === 0 && (
+      {isLoading && <Card className="text-sm text-muted">Cargando solicitudes...</Card>}
+
+      {!isLoading && solicitudes.length === 0 && (
         <Card className="text-muted">
           <p>Aún no tienes solicitudes enviadas.</p>
           <p className="mt-1 text-xs">Empieza buscando un profesional y compara opciones en tu zona.</p>
@@ -45,7 +46,7 @@ export default function ClienteDashboard() {
           <p className="text-muted">{s.message}</p>
           <p className="text-xs text-muted/80">Fecha preferida: {s.preferredDate || "No indicada"}</p>
           <div className="flex flex-wrap gap-2 pt-1">
-            <Link href={`/buscar`}><Button size="sm" variant="outline">Ver profesional</Button></Link>
+            <Link href={`/profesional/${s.professionalId}`}><Button size="sm" variant="outline">Ver profesional</Button></Link>
             <Button size="sm" variant="ghost">Enviar mensaje (mock)</Button>
           </div>
         </Card>

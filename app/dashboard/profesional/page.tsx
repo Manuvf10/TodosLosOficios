@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useSession } from "next-auth/react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { listSolicitudesProfesional, updateSolicitudEstado } from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,16 +12,20 @@ import { useToast } from "@/components/common/toast-provider";
 export default function ProfesionalDashboard() {
   const { data } = useSession();
   const { pushToast } = useToast();
+  const queryClient = useQueryClient();
   const [openId, setOpenId] = useState<string | null>(null);
-  const solicitudes = listSolicitudesProfesional(data?.user?.id || "");
+  const { data: solicitudes = [], isLoading } = useQuery({ queryKey: ["leads", "pro"], queryFn: listSolicitudesProfesional });
 
-  const setEstado = (id: string, estado: "aceptado" | "rechazado") => {
-    updateSolicitudEstado(id, estado);
-    pushToast(
-      estado === "aceptado" ? "Solicitud aceptada" : "Solicitud rechazada",
-      estado === "aceptado" ? "El cliente verá tu respuesta en su panel." : "Puedes centrarte en otras solicitudes activas.",
-    );
-  };
+  const mutation = useMutation({
+    mutationFn: ({ id, estado }: { id: string; estado: "aceptado" | "rechazado" }) => updateSolicitudEstado(id, estado),
+    onSuccess: async (_, vars) => {
+      pushToast(
+        vars.estado === "aceptado" ? "Solicitud aceptada" : "Solicitud rechazada",
+        vars.estado === "aceptado" ? "El cliente verá tu respuesta en su panel." : "Puedes centrarte en otras solicitudes activas.",
+      );
+      await queryClient.invalidateQueries({ queryKey: ["leads", "pro"] });
+    },
+  });
 
   return (
     <div className="space-y-4">
@@ -41,7 +46,8 @@ export default function ProfesionalDashboard() {
         </div>
       </Card>
 
-      {solicitudes.length === 0 && <Card className="text-muted">Todavía no hay solicitudes. Completa tu perfil con servicios y disponibilidad para recibir más leads.</Card>}
+      {isLoading && <Card className="text-sm text-muted">Cargando solicitudes...</Card>}
+      {!isLoading && solicitudes.length === 0 && <Card className="text-muted">Todavía no hay solicitudes. Completa tu perfil con servicios y disponibilidad para recibir más leads.</Card>}
 
       {solicitudes.map((s) => (
         <Card key={s.id} className="space-y-3">
@@ -49,11 +55,11 @@ export default function ProfesionalDashboard() {
           <p className="text-xs text-muted">Cliente (mock): ciudad pendiente de confirmar por mensaje.</p>
           <p className="text-muted">{s.message}</p>
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="secondary" onClick={() => setEstado(s.id, "aceptado")}>Aceptar</Button>
-            <Button size="sm" variant="outline" onClick={() => setEstado(s.id, "rechazado")}>Rechazar</Button>
+            <Button size="sm" variant="secondary" onClick={() => mutation.mutate({ id: s.id, estado: "aceptado" })}>Aceptar</Button>
+            <Button size="sm" variant="outline" onClick={() => mutation.mutate({ id: s.id, estado: "rechazado" })}>Rechazar</Button>
             <Button size="sm" variant="ghost" onClick={() => setOpenId((v) => (v === s.id ? null : s.id))}>Ver detalles</Button>
           </div>
-          {openId === s.id && <div className="rounded-lg border border-sand/20 bg-white/5 p-3 text-sm text-muted">Detalle (mock): solicitud creada el {new Date(s.createdAt).toLocaleDateString("es-ES")}, preferencia {s.preferredDate || "no indicada"}.</div>}
+          {openId === s.id && <div className="rounded-lg border border-sand/20 bg-white/5 p-3 text-sm text-muted">Detalle: solicitud creada el {new Date(s.createdAt).toLocaleDateString("es-ES")}, preferencia {s.preferredDate || "no indicada"}.</div>}
         </Card>
       ))}
     </div>

@@ -1,8 +1,8 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
-import { seedUsers } from "@/data/users";
-import { AppUser, Role } from "@/types";
+import { Role } from "@/types";
+import { createServerSupabaseAnon, createServerSupabaseAdmin } from "@/lib/supabase/server";
 
 declare module "next-auth" {
   interface Session {
@@ -30,26 +30,37 @@ export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
-      credentials: { email: {}, password: {}, localUserJson: {} },
+      credentials: { email: {}, password: {}, selectedRole: {} },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        let localUser: AppUser | null = null;
-        if (credentials.localUserJson) {
-          try {
-            localUser = JSON.parse(credentials.localUserJson as string) as AppUser;
-          } catch {
-            localUser = null;
-          }
-        }
+        const supabase = createServerSupabaseAnon();
+        const admin = createServerSupabaseAdmin();
 
-        const users = [...seedUsers, ...(localUser ? [localUser] : [])];
-        const user = users.find(
-          (u) => u.email.toLowerCase() === credentials.email.toLowerCase() && u.password === credentials.password,
-        );
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+          email: credentials.email,
+          password: credentials.password,
+        });
 
-        if (!user) return null;
-        return { id: user.id, email: user.email, name: user.name, role: user.role } as never;
+        if (authError || !authData.user) return null;
+
+        const { data: appUser } = await admin
+          .from("users")
+          .select("id, role, name")
+          .eq("id", authData.user.id)
+          .maybeSingle();
+
+        if (!appUser) return null;
+
+        const selectedRole = credentials.selectedRole as Role | undefined;
+        if (selectedRole && appUser.role !== selectedRole) return null;
+
+        return {
+          id: appUser.id,
+          email: credentials.email,
+          name: appUser.name,
+          role: appUser.role,
+        } as never;
       },
     }),
     ...(googleConfigured

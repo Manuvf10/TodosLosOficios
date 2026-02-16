@@ -74,14 +74,25 @@ export default function ProfesionalPage() {
                         <Textarea placeholder="Describe el problema, ubicación y urgencia" value={message} onChange={(e) => setMessage(e.target.value)} />
                         <label className="text-sm text-muted">Fecha preferida (opcional)</label>
                         <Input type="date" value={preferredDate} onChange={(e) => setPreferredDate(e.target.value)} />
-                        <Button onClick={() => {
-                          if (message.trim().length < 8) return alert("Por favor, añade más detalle para recibir mejor propuesta");
-                          createSolicitud({ id: `sol-${Date.now()}`, professionalId: pro.id, professionalName: pro.name, clientId: session.user.id, clientName: session.user.name || "Cliente", message, preferredDate, createdAt: new Date().toISOString(), estado: "enviado" });
-                          setMessage("");
-                          setPreferredDate("");
-                          setNotice("Solicitud enviada ✅. Puedes ver su estado en tu dashboard de cliente.");
-                          pushToast("Solicitud enviada", "Te avisaremos en el panel cuando el profesional responda.");
-                        }}>Enviar solicitud</Button>
+                        <Button
+                          onClick={async () => {
+                            if (message.trim().length < 8) {
+                              pushToast("Añade más detalle", "Describe el trabajo para recibir una propuesta útil.");
+                              return;
+                            }
+                            try {
+                              await createSolicitud({ professionalId: pro.id, message, preferredDate });
+                              setMessage("");
+                              setPreferredDate("");
+                              setNotice("Solicitud enviada ✅. Puedes ver su estado en tu dashboard de cliente.");
+                              pushToast("Solicitud enviada", "Te avisaremos en el panel cuando el profesional responda.");
+                            } catch {
+                              pushToast("No se pudo enviar", "Revisa tu sesión y vuelve a intentarlo.");
+                            }
+                          }}
+                        >
+                          Enviar solicitud
+                        </Button>
                       </div>
                     </>
                   )}

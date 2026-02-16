@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { storage } from "@/lib/storage";
 import { signIn } from "next-auth/react";
 import { Badge } from "@/components/ui/badge";
 
@@ -23,17 +22,23 @@ export default function RegistroPage() {
   const params = useSearchParams();
   const router = useRouter();
   const role = (params.get("role") as "CLIENTE" | "PROFESIONAL") || "CLIENTE";
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: { terms: false } });
+  const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: { terms: false } });
 
   const onSubmit = async (v: FormValues) => {
-    const id = `${role.toLowerCase()}-${Date.now()}`;
-    storage.saveUser({ id, name: v.name, email: v.email, password: v.password, role, city: v.city, postalCode: v.postalCode });
-    if (role === "PROFESIONAL") {
-      storage.setProfessionalProfile({ id, name: v.name, email: v.email, password: v.password, role, city: v.city, postalCode: v.postalCode, category: v.category || "General", categories: [v.category || "General"], baseRate: v.baseRate || 30, description: v.description || "", verified: false, urgent: false, rating: 5, reviewsCount: 0, photo: "https://placehold.co/400x300", availability: ["Lun"], services: ["Servicio general"] });
+    const res = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...v, role }),
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({ message: "No se pudo registrar" }));
+      alert(body.message || "No se pudo registrar");
+      return;
     }
-    const local = storage.listUsers().find((u) => u.email.toLowerCase() === v.email.toLowerCase()) ?? null;
-    await signIn("credentials", { email: v.email, password: v.password, localUserJson: local ? JSON.stringify(local) : "", redirect: false });
-    router.push("/dashboard");
+
+    await signIn("credentials", { email: v.email, password: v.password, selectedRole: role, redirect: false });
+    router.push(role === "PROFESIONAL" ? "/dashboard/profesional" : "/dashboard/cliente");
   };
 
   return (
@@ -60,7 +65,7 @@ export default function RegistroPage() {
 
           <label className="md:col-span-2 mt-1 flex items-center gap-2 text-sm text-muted"><Checkbox checked={watch("terms")} onCheckedChange={(v) => setValue("terms", !!v)} />Acepto los términos de uso y la política de privacidad (demo).</label>
           {errors.terms && <p className="md:col-span-2 text-sm text-terracotta">{errors.terms.message}</p>}
-          <Button className="md:col-span-2" size="lg">Crear cuenta y continuar</Button>
+          <Button disabled={isSubmitting} className="md:col-span-2" size="lg">Crear cuenta y continuar</Button>
         </form>
       </div>
     </div>

@@ -9,9 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { storage } from "@/lib/storage";
 import { Badge } from "@/components/ui/badge";
-import { seedUsers } from "@/data/users";
 import { Role } from "@/types";
 import { useToast } from "@/components/common/toast-provider";
 
@@ -54,20 +52,10 @@ export default function LoginPage() {
   const onSubmit = async (values: z.infer<typeof schema>) => {
     setErrorMsg(null);
 
-    const local = storage.listUsers().find((u) => u.email.toLowerCase() === values.email.toLowerCase()) ?? null;
-    const candidate = [...seedUsers, ...(local ? [local] : [])].find(
-      (u) => u.email.toLowerCase() === values.email.toLowerCase() && u.password === values.password,
-    );
-
-    if (!candidate) {
-      setErrorMsg("No encontramos una cuenta con ese email y contraseña.");
-      return;
-    }
-
-    if (candidate.role !== selectedRole) {
-      setErrorMsg(
-        `Esta cuenta es de ${candidate.role === "PROFESIONAL" ? "Profesional" : "Cliente"}. Cambia el tipo de acceso o usa otra cuenta.`,
-      );
+    const roleRes = await fetch(`/api/auth/role?email=${encodeURIComponent(values.email)}`);
+    const roleJson = await roleRes.json();
+    if (roleJson.role && roleJson.role !== selectedRole) {
+      setErrorMsg(`Esta cuenta es de ${roleJson.role === "PROFESIONAL" ? "Profesional" : "Cliente"}. Cambia el tipo de acceso o usa otra cuenta.`);
       return;
     }
 
@@ -75,7 +63,7 @@ export default function LoginPage() {
 
     const res = await signIn("credentials", {
       ...values,
-      localUserJson: local ? JSON.stringify(local) : "",
+      selectedRole,
       redirect: false,
     });
 
