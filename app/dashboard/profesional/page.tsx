@@ -12,18 +12,12 @@ export default function ProfesionalDashboard() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-slate-100">Solicitudes recibidas</h1>
-        <Link href="/dashboard/profesional/perfil" className="text-sm text-cyan-200 underline">Editar perfil</Link>
-      </div>
-      {solicitudes.length === 0 && <Card>No hay solicitudes nuevas.</Card>}
+      <div className="flex items-center justify-between"><h1 className="text-3xl font-bold text-cream">Solicitudes recibidas</h1><Link href="/dashboard/profesional/perfil" className="text-sm text-amber underline">Editar perfil</Link></div>
+      {solicitudes.length === 0 && <Card className="text-muted">No hay solicitudes nuevas.</Card>}
       {solicitudes.map((s) => (
         <Card key={s.id} className="space-y-3">
-          <div className="flex items-center justify-between gap-2">
-            <p className="font-semibold text-slate-100">{s.clientName}</p>
-            <Badge>{s.estado}</Badge>
-          </div>
-          <p className="text-slate-300">{s.message}</p>
+          <div className="flex items-center justify-between gap-2"><p className="font-semibold text-cream">{s.clientName}</p><Badge>{s.estado}</Badge></div>
+          <p className="text-muted">{s.message}</p>
           <div className="flex gap-2">
             <Button size="sm" variant="secondary" onClick={() => updateSolicitudEstado(s.id, "aceptado")}>Aceptar</Button>
             <Button size="sm" variant="outline" onClick={() => updateSolicitudEstado(s.id, "rechazado")}>Rechazar</Button>

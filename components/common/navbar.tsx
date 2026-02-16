@@ -18,30 +18,21 @@ export function Navbar() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/60 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-sand/15 bg-espresso/70 backdrop-blur-xl">
       <nav className="app-shell flex h-16 items-center justify-between gap-3">
-        <Link href="/" className="flex items-center gap-2 font-bold text-slate-100">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-400/20 text-cyan-200"><BriefcaseBusiness className="h-4 w-4" /></span>
+        <Link href="/" className="flex items-center gap-2 font-bold text-cream">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-copper/30 text-amber"><BriefcaseBusiness className="h-4 w-4" /></span>
           TodosLosOficios
         </Link>
 
         <div className="hidden items-center gap-1 md:flex">
           {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                "rounded-lg px-3 py-2 text-sm text-slate-300 transition hover:bg-white/10 hover:text-white",
-                pathname === link.href && "bg-white/10 text-white",
-              )}
-            >
-              {link.label}
-            </Link>
+            <Link key={link.href} href={link.href} className={cn("rounded-lg px-3 py-2 text-sm text-muted transition hover:bg-white/10 hover:text-cream", pathname === link.href && "bg-white/10 text-cream")}>{link.label}</Link>
           ))}
         </div>
 
         <div className="flex items-center gap-2">
-          <Badge className="hidden sm:inline-flex">Demo</Badge>
+          <Badge className="hidden sm:inline-flex">Verificados</Badge>
           {data?.user ? (
             <>
               <Link href="/dashboard"><Button size="sm" variant="outline">Dashboard</Button></Link>

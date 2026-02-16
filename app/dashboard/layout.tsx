@@ -12,12 +12,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <section className="grid gap-4 lg:grid-cols-[240px_1fr]">
       <aside className="glass h-fit rounded-2xl p-3 lg:sticky lg:top-20">
-        <p className="mb-3 px-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Dashboard</p>
+        <p className="mb-3 px-2 text-xs font-semibold uppercase tracking-wide text-muted/80">Dashboard</p>
         <nav className="space-y-1">
           {links.map((link) => {
             const Icon = link.icon;
             return (
-              <Link key={link.href} href={link.href} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10">
+              <Link key={link.href} href={link.href} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-muted transition hover:bg-white/10 hover:text-cream">
                 <Icon className="h-4 w-4" />{link.label}
               </Link>
             );

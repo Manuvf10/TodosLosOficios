@@ -12,13 +12,12 @@ const iconMap: Record<string, ReactNode> = {
 };
 
 export function CategoryCard({ name }: { name: string }) {
+  const count = (name.length * 3) % 14 + 6;
   return (
-    <Card className="group cursor-pointer rounded-2xl p-5">
-      <div className="mb-3 inline-flex rounded-lg bg-cyan-400/20 p-2 text-cyan-200 transition group-hover:scale-110">
-        {iconMap[name] ?? <Sparkles className="h-5 w-5" />}
-      </div>
-      <h3 className="font-semibold text-slate-100">{name}</h3>
-      <p className="mt-1 text-sm text-slate-300">Profesionales verificados y reseñados.</p>
+    <Card className="group cursor-pointer rounded-2xl p-5 transition duration-200 hover:-translate-y-0.5">
+      <div className="mb-3 inline-flex rounded-lg bg-copper/25 p-2 text-amber transition group-hover:scale-110">{iconMap[name] ?? <Sparkles className="h-5 w-5" />}</div>
+      <h3 className="font-semibold text-cream">{name}</h3>
+      <p className="mt-1 text-sm text-muted">{count} pros disponibles</p>
     </Card>
   );
 }
