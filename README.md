@@ -1,57 +1,70 @@
-# TodosLosOficios (MVP operativo con Supabase + Resend)
+# TodosLosOficios (MVP real con Supabase + Resend)
 
-Marketplace de servicios locales (España, foco Alicante) construido con **Next.js 14 (App Router)**, **TypeScript**, **Tailwind**, **shadcn/ui**, **NextAuth**, **React Query** y backend real con **Supabase Postgres/Auth**.
+Marketplace de servicios locales (España, foco Alicante) con **Next.js 14 App Router**, **TypeScript**, **Tailwind/shadcn/ui**, **NextAuth**, **React Query** y backend real en **Supabase**.
 
-## Qué incluye
+## Stack operativo
 
-- Registro/Login real con email+password y rol (`CLIENTE` / `PROFESIONAL`).
-- Catálogo real de categorías y profesionales desde Supabase.
-- Gestión de leads real en base de datos.
-- Dashboard cliente/profesional conectado a datos persistentes.
+- Auth real (email+password) con Supabase Auth + roles `CLIENTE` / `PROFESIONAL`.
+- Datos persistentes en Postgres (Supabase): perfiles, categorías, leads.
+- Seguridad por sesión + API server validation + RLS.
 - Emails transaccionales con Resend al crear un lead.
-- UI warm/cocoa premium ya existente.
 
-## 1) Requisitos
+---
 
-- Node.js 18+
-- Proyecto en Supabase
-- Cuenta en Resend
+## 1) Variables de entorno
 
-## 2) Variables de entorno
-
-Copia `.env.example` a `.env.local` y completa:
+Copia `.env.example` a `.env.local`:
 
 ```bash
 cp .env.example .env.local
 ```
 
-Variables necesarias:
+Variables obligatorias:
 
 - `NEXTAUTH_URL`
 - `NEXTAUTH_SECRET`
 - `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY` (solo servidor)
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` (**o** `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`)
+- `SUPABASE_SERVICE_ROLE_KEY` (**o** `SUPABASE_SECRET_KEY`) → **solo servidor**
 - `RESEND_API_KEY`
 - `RESEND_FROM_EMAIL`
 
-> En Vercel, configura las mismas en **Project Settings → Environment Variables**.
+> Modelo nuevo de keys de Supabase: `sb_publishable_*` (pública) y `sb_secret_*` (secreta).
 
-## 3) Configuración de base de datos (Supabase)
+### Seguridad de claves
 
-En el SQL Editor de Supabase ejecuta en este orden:
+- Nunca commitees `.env.local`.
+- Si una key se expone, **róta la key inmediatamente** en Supabase/Resend.
+- La publishable key solo es segura con RLS bien configurado.
+- La secret/service key nunca debe llegar al cliente.
 
-1. `supabase/schema.sql`
-2. `supabase/rls.sql`
-3. `supabase/seed.sql`
+---
 
-También tienes script recordatorio:
+## 2) Configurar Supabase
+
+1. Crea un proyecto en Supabase.
+2. En **Authentication → URL Configuration**, añade:
+   - `http://localhost:3000`
+   - Tu dominio de Vercel (`https://tu-app.vercel.app`)
+3. En **SQL Editor**, ejecuta en orden:
+   1. `supabase/schema.sql`
+   2. `supabase/rls.sql`
+   3. `supabase/seed.sql` (categorías)
+4. Crea profesionales demo (Auth + users + profiles):
+
+```bash
+npm run seed:supabase
+```
+
+Script de apoyo:
 
 ```bash
 npm run db:setup
 ```
 
-## 4) Instalación y arranque local
+---
+
+## 3) Arranque local
 
 ```bash
 npm install
@@ -60,23 +73,62 @@ npm run dev
 
 Abre `http://localhost:3000`.
 
-## 5) Flujo funcional esperado
+Para validación de compilación:
 
-1. Visitante entra en landing y busca profesionales.
-2. Cliente se registra/inicia sesión y envía solicitud.
-3. Lead se guarda en Supabase (`leads`).
-4. Profesional ve y gestiona lead en `/dashboard/profesional`.
-5. Se envía email a profesional y confirmación al cliente (Resend).
+```bash
+npm run typecheck
+npm run build
+```
 
-## 6) Scripts útiles
+---
+
+## 4) Deploy en Vercel
+
+1. Importa el repo en Vercel.
+2. Define todas las variables de `.env.example` en **Project Settings → Environment Variables**.
+3. Asegura `NEXTAUTH_URL=https://tu-dominio-vercel`.
+4. Redeploy.
+
+---
+
+## 5) Flujo funcional E2E
+
+- Visitante navega y busca profesionales.
+- Cliente se registra/login como `CLIENTE`.
+- Cliente envía lead desde `/profesional/[id]`.
+- Lead aparece en dashboard cliente y dashboard profesional.
+- Profesional cambia estado (`enviado` → `aceptado/rechazado`).
+- Se envía email al profesional y confirmación al cliente (si Resend está configurado).
+
+---
+
+## 6) Manual test checklist
+
+1. **Cliente**
+   - Registro cliente → login cliente.
+   - Buscar profesional → abrir perfil → enviar presupuesto.
+   - Ver lead en `/dashboard/cliente`.
+
+2. **Profesional**
+   - Registro profesional → login profesional.
+   - Ver lead en `/dashboard/profesional`.
+   - Cambiar estado de lead y comprobar refresco.
+
+3. **RLS / Seguridad**
+   - Cliente A no puede leer leads de Cliente B.
+   - Profesional X no puede actualizar leads de Profesional Y.
+   - Endpoints públicos no exponen emails privados.
+
+4. **Emails**
+   - Con `RESEND_API_KEY` activa, comprobar correo al profesional y confirmación al cliente.
+
+---
+
+## Scripts
 
 - `npm run dev`
 - `npm run build`
 - `npm run lint`
 - `npm run typecheck`
 - `npm run db:setup`
-
-## Notas de seguridad
-
-- `SUPABASE_SERVICE_ROLE_KEY` **nunca** debe exponerse al cliente.
-- La autorización de acceso se valida en API + sesión + políticas RLS.
+- `npm run seed:supabase`

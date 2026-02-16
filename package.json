@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "db:setup": "echo \"Ejecuta supabase/schema.sql, supabase/rls.sql y supabase/seed.sql en Supabase SQL Editor\""
+    "db:setup": "echo \"Ejecuta supabase/schema.sql, supabase/rls.sql y supabase/seed.sql en Supabase SQL Editor y luego npm run seed:supabase\"",
+    "seed:supabase": "node scripts/seed-supabase.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
