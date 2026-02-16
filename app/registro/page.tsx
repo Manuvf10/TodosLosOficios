@@ -1,0 +1,53 @@
+"use client";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { storage } from "@/lib/storage";
+import { signIn } from "next-auth/react";
+
+const schema = z.object({ name: z.string().min(2), email: z.string().email(), password: z.string().min(6), city: z.string().min(2), postalCode: z.string().min(4), category: z.string().optional(), baseRate: z.coerce.number().optional(), description: z.string().optional(), terms: z.boolean().refine((v)=>v,{message:"Debes aceptar términos"}) });
+
+type FormValues = z.infer<typeof schema>;
+
+export default function RegistroPage() {
+  const params = useSearchParams();
+  const router = useRouter();
+  const role = (params.get("role") as "CLIENTE" | "PROFESIONAL") || "CLIENTE";
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: { terms: false } });
+
+  const onSubmit = async (v: FormValues) => {
+    const id = `${role.toLowerCase()}-${Date.now()}`;
+    storage.saveUser({ id, name: v.name, email: v.email, password: v.password, role, city: v.city, postalCode: v.postalCode });
+    if (role === "PROFESIONAL") {
+      storage.setProfessionalProfile({ id, name: v.name, email: v.email, password: v.password, role, city: v.city, postalCode: v.postalCode, category: v.category || "General", categories: [v.category || "General"], baseRate: v.baseRate || 30, description: v.description || "", verified: false, urgent: false, rating: 5, reviewsCount: 0, photo: "https://placehold.co/400x300", availability: ["Lun"], services: ["Servicio general"] });
+    }
+    await signIn("credentials", { email: v.email, password: v.password, localUsers: JSON.stringify(storage.listUsers()), redirect: false });
+    router.push("/dashboard");
+  };
+
+  return (
+    <div className="mx-auto max-w-xl rounded-xl bg-white p-6 shadow">
+      <h1 className="mb-4 text-2xl font-bold">Registro {role}</h1>
+      <form onSubmit={handleSubmit(onSubmit)} className="grid gap-3 md:grid-cols-2">
+        <div><Label>Nombre</Label><Input {...register("name")} /></div>
+        <div><Label>Email</Label><Input {...register("email")} /></div>
+        <div><Label>Contraseña</Label><Input type="password" {...register("password")} /></div>
+        <div><Label>Ciudad</Label><Input {...register("city")} /></div>
+        <div><Label>Código postal</Label><Input {...register("postalCode")} /></div>
+        {role === "PROFESIONAL" && <>
+          <div><Label>Oficio</Label><Input {...register("category")} /></div>
+          <div><Label>Tarifa base</Label><Input type="number" {...register("baseRate")} /></div>
+          <div className="md:col-span-2"><Label>Descripción</Label><Input {...register("description")} /></div>
+        </>}
+        <label className="md:col-span-2 flex items-center gap-2"><Checkbox checked={watch("terms")} onCheckedChange={(v)=>setValue("terms", !!v)} />Acepto términos</label>
+        {errors.terms && <p className="text-sm text-red-600">{errors.terms.message}</p>}
+        <Button className="md:col-span-2">Crear cuenta</Button>
+      </form>
+    </div>
+  );
+}
