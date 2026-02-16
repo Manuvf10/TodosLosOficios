@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { fetchProfesionalById, fetchReviews, createSolicitud } from "@/lib/api";
@@ -12,9 +13,11 @@ import { useSession } from "next-auth/react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Star, ShieldCheck, Zap, MapPin, Clock3 } from "lucide-react";
+import { useToast } from "@/components/common/toast-provider";
 
 export default function ProfesionalPage() {
   const { id } = useParams<{ id: string }>();
+  const pathname = usePathname();
   const { data: session } = useSession();
   const { data: pro } = useQuery({ queryKey: ["pro", id], queryFn: () => fetchProfesionalById(id) });
   const { data: reviews = [] } = useQuery({ queryKey: ["reviews", id], queryFn: () => fetchReviews(id) });
@@ -22,6 +25,7 @@ export default function ProfesionalPage() {
   const [preferredDate, setPreferredDate] = useState("");
   const [tab, setTab] = useState<"servicios" | "zona" | "resenas">("servicios");
   const [notice, setNotice] = useState<string | null>(null);
+  const { pushToast } = useToast();
 
   if (!pro) return <p className="text-muted">Cargando perfil...</p>;
 
@@ -53,22 +57,34 @@ export default function ProfesionalPage() {
               <Dialog>
                 <DialogTrigger asChild><Button size="lg">Solicitar presupuesto</Button></DialogTrigger>
                 <DialogContent>
-                  <h3 className="text-xl font-semibold text-cream">Cuéntale lo que necesitas</h3>
-                  <p id="dialog-description" className="mb-3 text-sm text-muted">Ejemplo: “Arreglo fuga urgente hoy por la tarde”. Cuanto más detalle, mejor presupuesto recibirás.</p>
-                  <div className="space-y-3">
-                    <label className="text-sm text-muted">Descripción del trabajo</label>
-                    <Textarea placeholder="Describe el problema, ubicación y urgencia" value={message} onChange={(e) => setMessage(e.target.value)} />
-                    <label className="text-sm text-muted">Fecha preferida (opcional)</label>
-                    <Input type="date" value={preferredDate} onChange={(e) => setPreferredDate(e.target.value)} />
-                    <Button onClick={() => {
-                      if (!session?.user) return alert("Debes iniciar sesión");
-                      if (message.trim().length < 8) return alert("Por favor, añade más detalle para recibir mejor propuesta");
-                      createSolicitud({ id: `sol-${Date.now()}`, professionalId: pro.id, professionalName: pro.name, clientId: session.user.id, clientName: session.user.name || "Cliente", message, preferredDate, createdAt: new Date().toISOString(), estado: "enviado" });
-                      setMessage("");
-                      setPreferredDate("");
-                      setNotice("Solicitud enviada ✅. Puedes ver su estado en tu dashboard de cliente.");
-                    }}>Enviar solicitud</Button>
-                  </div>
+                  {!session?.user ? (
+                    <div className="space-y-3">
+                      <h3 className="text-xl font-semibold text-cream">Para solicitar presupuesto, entra como cliente</h3>
+                      <p id="dialog-description" className="text-sm text-muted">Necesitamos tu cuenta de cliente para guardar y seguir el estado de tu solicitud.</p>
+                      <Link href={`/login?role=CLIENTE&callbackUrl=${encodeURIComponent(pathname)}`} className="inline-block">
+                        <Button>Entrar como cliente para solicitar</Button>
+                      </Link>
+                    </div>
+                  ) : (
+                    <>
+                      <h3 className="text-xl font-semibold text-cream">Cuéntale lo que necesitas</h3>
+                      <p id="dialog-description" className="mb-3 text-sm text-muted">Ejemplo: “Arreglo fuga urgente hoy por la tarde”. Cuanto más detalle, mejor presupuesto recibirás.</p>
+                      <div className="space-y-3">
+                        <label className="text-sm text-muted">Descripción del trabajo</label>
+                        <Textarea placeholder="Describe el problema, ubicación y urgencia" value={message} onChange={(e) => setMessage(e.target.value)} />
+                        <label className="text-sm text-muted">Fecha preferida (opcional)</label>
+                        <Input type="date" value={preferredDate} onChange={(e) => setPreferredDate(e.target.value)} />
+                        <Button onClick={() => {
+                          if (message.trim().length < 8) return alert("Por favor, añade más detalle para recibir mejor propuesta");
+                          createSolicitud({ id: `sol-${Date.now()}`, professionalId: pro.id, professionalName: pro.name, clientId: session.user.id, clientName: session.user.name || "Cliente", message, preferredDate, createdAt: new Date().toISOString(), estado: "enviado" });
+                          setMessage("");
+                          setPreferredDate("");
+                          setNotice("Solicitud enviada ✅. Puedes ver su estado en tu dashboard de cliente.");
+                          pushToast("Solicitud enviada", "Te avisaremos en el panel cuando el profesional responda.");
+                        }}>Enviar solicitud</Button>
+                      </div>
+                    </>
+                  )}
                 </DialogContent>
               </Dialog>
             </div>
