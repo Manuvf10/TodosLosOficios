@@ -15,6 +15,9 @@ import { EmptyState } from "@/components/common/empty-state";
 const POPULAR = ["Madrid", "Barcelona", "Valencia", "Sevilla"];
 const RECENT_KEY = "tlo_recent_searches";
 
+
+
+
 export default function BuscarPage() {
   const router = useRouter();
   const searchParams = useSearchParams();

@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Role } from "@/types";
+
 import { useToast } from "@/components/common/toast-provider";
 
 const schema = z.object({ email: z.string().email(), password: z.string().min(6) });
@@ -25,6 +26,7 @@ function RoleCard({ role, selected, onSelect }: { role: Role; selected: boolean;
     </button>
   );
 }
+
 
 export default function LoginPage() {
   const router = useRouter();

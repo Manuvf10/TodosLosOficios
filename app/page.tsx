@@ -8,6 +8,8 @@ import { categorias } from "@/data/categorias";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
+
+
 export const metadata = {
   title: "Encuentra profesionales de confianza | TodosLosOficios",
   description: "Compara profesionales verificados en tu zona y solicita presupuestos sin compromiso en menos de un minuto.",

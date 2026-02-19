@@ -8,3 +8,4 @@ export const metadata: Metadata = {
 export default function BuscarLayout({ children }: { children: React.ReactNode }) {
   return children;
 }
+export const dynamic = "force-dynamic";

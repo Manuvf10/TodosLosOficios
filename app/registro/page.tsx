@@ -18,6 +18,9 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
+
+
+
 export default function RegistroPage() {
   const params = useSearchParams();
   const router = useRouter();

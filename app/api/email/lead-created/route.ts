@@ -2,8 +2,6 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { z } from "zod";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 const schema = z.object({
   professionalEmail: z.string().email(),
   clientEmail: z.string().email(),
@@ -14,12 +12,19 @@ const schema = z.object({
 
 export async function POST(req: Request) {
   const body = schema.safeParse(await req.json());
-  if (!body.success) return NextResponse.json({ message: "payload inválido" }, { status: 400 });
+  if (!body.success) {
+    return NextResponse.json({ message: "payload inválido" }, { status: 400 });
+  }
 
+  const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
-  if (!process.env.RESEND_API_KEY) {
+
+  // Si no hay API key, NO rompemos build ni runtime: simplemente “skip”
+  if (!apiKey) {
     return NextResponse.json({ ok: true, skipped: true });
   }
+
+  const resend = new Resend(apiKey);
 
   await resend.emails.send({
     from,
